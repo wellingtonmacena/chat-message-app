@@ -1,0 +1,13 @@
+@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  background-color: #e1f5ff;
+  font-family: 'Arial', sans-serif;
+}
+
+.container {
+  max-width: 600px;
+}
