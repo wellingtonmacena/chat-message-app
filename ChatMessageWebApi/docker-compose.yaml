@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: sqlserver-chat
+    ports:
+      - "1433:1433"
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=YourStrongPassword123
+    networks:
+      - my-network
+
+  redis:
+    image: redis:7
+    container_name: my_redis
+    restart: always
+    ports:
+      - "6379:6379"
+
+volumes:
+  sql_data_chat:
+    driver: local
+
+networks:
+  my-network:
+    driver: bridge 
