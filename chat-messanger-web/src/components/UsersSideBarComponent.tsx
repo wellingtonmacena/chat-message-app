@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import User from "../../models/user.interface";
+import User from "../models/user.interface";
 import { useUser } from "@/context/userContext";
 import { getUsers } from "@/services/ChatMessagerApi";
 
@@ -11,30 +11,35 @@ export default function UsersSideBarComponent({
   onSelectRecipientUser,
 }: Props) {
   const { getLoggedUser, setLoggedUser } = useUser();
-  
+
   const [users, setUsers] = useState<User[]>([]);
 
-  
-useEffect(() => {
-  const fetchUsers = async () => {
-    console.log("Current user:", getLoggedUser());
+  useEffect(() => {
+    const fetchUsers = async () => {
+      console.log("Current user:", getLoggedUser());
 
-    try {
-      const response = await getUsers();
+      try {
+        const response = await getUsers();
 
-      // Verifica se response.body existe e é um array antes de setar
-      if (Array.isArray(response?.data)) {
-        setUsers([...response.data]);
-      } else {
-        console.error("Resposta inesperada de getUsers:", response);
+        // Verifica se response.body existe e é um array antes de setar
+        if (Array.isArray(response?.data)) {
+          var index = response.data.findIndex(
+            (item) => item.id === getLoggedUser()?.id
+          );
+          if (index !== -1) {
+            response.data.splice(index, 1); // Remove o usuário logado da lista
+          }
+          setUsers([...response.data]);
+        } else {
+          console.error("Resposta inesperada de getUsers:", response);
+        }
+      } catch (error) {
+        console.error("Failed to fetch users:", error);
       }
-    } catch (error) {
-      console.error("Failed to fetch users:", error);
-    }
-  };
+    };
 
-  fetchUsers();
-}, []);
+    fetchUsers();
+  }, []);
 
   return (
     <aside className="w-54 h-screen bg-gray-100 border-r border-gray-300 p-4">

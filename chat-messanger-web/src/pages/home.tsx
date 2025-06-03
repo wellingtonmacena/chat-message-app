@@ -1,14 +1,14 @@
-import ChatMessageComponent from "@/components/ChatMessageComponent/ChatMessageComponent";
-import UsersSideBarComponent from "../components/UsersSideBarComponent/UsersSideBarComponent";
+import ChatMessageComponent from "@/components/ChatMessageComponent";
+import UsersSideBarComponent from "../components/UsersSideBarComponent";
 import "../styles/globals.css";
 import { useState } from "react";
 import User from "@/models/user.interface";
 
 export default function Home() {
+  const [selectedRecipientUser, setselectedRecipientUser] =
+    useState<User | null>(null);
 
-     const [selectedRecipientUser, setselectedRecipientUser] = useState<User | null>(null);
-
- return (
+  return (
     <div className="flex h-screen">
       <UsersSideBarComponent onSelectRecipientUser={setselectedRecipientUser} />
       {selectedRecipientUser ? (

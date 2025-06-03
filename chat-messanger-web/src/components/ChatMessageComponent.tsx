@@ -1,6 +1,9 @@
+import { useUser } from "@/context/userContext";
 import Message from "@/models/message.interface";
 import User from "@/models/user.interface";
-import { useEffect, useRef, useState } from "react";
+import { getMessages, sendMessage } from "@/services/ChatMessagerApi";
+import { use, useEffect, useRef, useState } from "react";
+import { v4 as uuidv4, v4 } from "uuid";
 
 interface Props {
   recipient: User;
@@ -8,51 +11,35 @@ interface Props {
 
 export default function ChatMessageComponent({ recipient }: Props) {
   const [newMessage, setNewMessage] = useState("");
-  const myUser: User = {
-    id: "1",
-    name: "Alice Wellington",
-    isOnline: true,
-    profilePictureUrl: "https://i.pravatar.cc/40?img=1", // foto fictícia da Alice
-  };
-
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: "1",
-      createdAt: new Date(),
-      recipientId: "2",
-      senderId: "1",
-      content: "Olá, tudo bem?",
-    },
-    {
-      id: "2",
-      createdAt: new Date(),
-      recipientId: "1",
-      senderId: "2",
-      content: "Oi! Tudo sim, e você?",
-    },
-  ]);
-
-  const bottomRef = useRef<HTMLDivElement>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+ const bottomRef = useRef<HTMLDivElement>(null);
   const [isFetching, setIsFetching] = useState(false);
+  const { getLoggedUser, setLoggedUser } = useUser();
+  let myUser: User = getLoggedUser()!;
+
+  const [messages, setMessages] = useState<Message[]>([]);
+
+  useEffect(() => {
+    const fetchMessages = async () => {
+      const response = await getMessages({
+        userId: myUser.id,
+        recipientId: recipient.id,
+        pageNumber: currentPage,
+        pageSize: 10,
+      });
+
+      console.log("Fetched messages:", response);
+      setMessages(response);
+    };
+
+    fetchMessages();
+  }, [recipient]);
+
+ 
 
   const fetchMoreMessages = () => {
     if (isFetching) return;
     setIsFetching(true);
-
-    setTimeout(() => {
-      const newMessages: Message[] = Array.from({ length: 10 }, (_, i) => ({
-        id: `${messages.length + i + 1}`,
-        createdAt: new Date(),
-        recipientId: i % 2 === 0 ? "1" : "2",
-        senderId: i % 2 === 0 ? "2" : "1",
-        content: `Mensagem nova #${messages.length + i + 1}`,
-      }));
-
-      if (messages.length < 20) {
-        setMessages((prev) => [...prev, ...newMessages]);
-        setIsFetching(false);
-      }
-    }, 1000);
   };
 
   useEffect(() => {
@@ -87,21 +74,25 @@ export default function ChatMessageComponent({ recipient }: Props) {
         behavior: "smooth",
         block: "end", // Ensures the end of the element is in view
       });
+
+      setCurrentPage((prev) => prev + 1); // Incrementa a página após o scroll
     }
   }, [messages]); // Dispara este efeito sempre que 'messages' é atualizado
 
-  const handleSendMessage = () => {
+  const handleSendMessage = async () => {
     if (!newMessage.trim()) return;
 
     const messageToAdd: Message = {
-      id: `${messages.length + 1}`,
+      id: v4(), // Gera um ID único para a mensagem
       createdAt: new Date(),
       recipientId: recipient.id,
       senderId: myUser.id,
       content: newMessage.trim(),
     };
 
+    await sendMessage(messageToAdd);
     setMessages((prev) => [...prev, messageToAdd]);
+
     setNewMessage("");
     // A chamada para scrollIntoView foi movida para o useEffect acima.
   };
@@ -177,7 +168,7 @@ export default function ChatMessageComponent({ recipient }: Props) {
                 </div>
                 <div>{msg.content}</div>
                 <div className="text-xs text-right opacity-60 mt-1 font-mono">
-                  {msg.createdAt.toLocaleTimeString([], {
+                  {new Date(msg.createdAt).toLocaleTimeString([], {
                     hour: "2-digit",
                     minute: "2-digit",
                   })}

@@ -1,7 +1,11 @@
-﻿namespace ChatMessageWebApi.Models.Requests
+﻿using System.Text.Json.Serialization;
+
+namespace ChatMessageWebApi.Models.Requests
 {
     public class PostNewMessageRequest
     {
+        [JsonPropertyName("id")]
+        public Guid MessageId { get; set; }
         public string Content { get; set; }
         public DateTime CreatedAt { get; set; }
 

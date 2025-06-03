@@ -26,26 +26,17 @@ export const loginUser = async (loginRequest: LoginRequest) => {
 
 export const getMessages = async ({
   userId,
+  recipientId,
   pageNumber,
   pageSize,
-  recipientId,
+  
 }: GetMessagesRequest) => {
   try {
-    const response = await fetch(
-      `${BASE_URL}/users/${userId}/messages?recipientId=${recipientId}&pageNumber=${pageNumber}&pageSize=${pageSize}`,
-      {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      }
+    const response = await axios.get(
+      `${BASE_URL}/messages?senderId=${userId}&recipientId=${recipientId}&pageNumber=${pageNumber}&pageSize=${pageSize}`,
+      
     );
-
-    if (!response.ok) {
-      throw new Error("Failed to fetch messages");
-    }
-
-    const data = await response.json();
+    const data = response.data.items;
     return data;
   } catch (error) {
     toast.error("Failed to fetch messages. Please try again.");
@@ -56,19 +47,15 @@ export const getMessages = async ({
 
 export const sendMessage = async (sendMessageRequest: SendMessageRequest) => {
   try {
-    const response = await fetch(`${BASE_URL}/messages`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(sendMessageRequest),
-    });
+    const response = await axios.post(`${BASE_URL}/messages`, sendMessageRequest, );
 
-    if (!response.ok) {
-      throw new Error("Failed to send message");
+    if (!response.status || response.status !== 200) {
+      console.error("Failed to send message:", response);
+     
     }
 
-    const data = await response.json();
+    const data = response.data;
+    toast.success("Message sent successfully!");
     return data;
   } catch (error) {
     toast.error("Failed to send message. Please try again.");

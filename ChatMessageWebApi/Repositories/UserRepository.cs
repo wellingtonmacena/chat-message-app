@@ -13,9 +13,12 @@ namespace ChatMessageWebApi.Repositories
 
         public async Task<Message> CreateMessage(PostNewMessageRequest message)
         {
-            var conversation = await _appDbContext.Conversations
-                .Include(c => c.Messages)
-                .FirstOrDefaultAsync(c => c.Id == message.ConversationId || c.RecipientId.Equals(message.RecipientId) && c.SenderId.Equals(message.SenderId));
+            Conversation? conversation = await _appDbContext.Conversations
+               .Include(c => c.Messages)
+               .FirstOrDefaultAsync(c => c.SenderId.Equals(message.SenderId) && c.RecipientId.Equals(message.RecipientId)
+                                   || c.SenderId.Equals(message.RecipientId) && c.RecipientId.Equals(message.SenderId))
+              ;
+
 
 
             if (conversation == null)
@@ -29,15 +32,16 @@ namespace ChatMessageWebApi.Repositories
 
                 };
 
-                conversation =  (await  _appDbContext.AddAsync(conversation)).Entity;
+                conversation = (await _appDbContext.AddAsync(conversation)).Entity;
             }
 
-            var newMessage = new Message
+            Message newMessage = new()
             {
                 Content = message.Content,
                 CreatedAt = message.CreatedAt,
                 ConversationId = conversation.Id,
-                UpdatedAt = message.CreatedAt
+                UpdatedAt = message.CreatedAt,
+                
             };
 
             await _appDbContext.AddAsync(newMessage);
@@ -45,19 +49,23 @@ namespace ChatMessageWebApi.Repositories
 
             return newMessage;
 
-
-
-
         }
 
         public async Task<Paginate<Message>> GetMessages(GetMessagesRequest getMessagesRequest)
         {
-            var conversation = await _appDbContext.Conversations
+            Conversation? conversation = await _appDbContext.Conversations
                 .Include(c => c.Messages)
-                .FirstAsync(c => c.SenderId.Equals(getMessagesRequest.SenderId) && c.RecipientId.Equals(getMessagesRequest.RecipientId))
+                .FirstOrDefaultAsync(c => c.SenderId.Equals(getMessagesRequest.SenderId) && c.RecipientId.Equals(getMessagesRequest.RecipientId)
+                                    || c.SenderId.Equals(getMessagesRequest.RecipientId) && c.RecipientId.Equals(getMessagesRequest.SenderId))
                ;
 
-            int totalCount = conversation.Messages .Count();
+
+            if (conversation == null)
+            {
+                return new Paginate<Message>([], 0, getMessagesRequest.PageSize, getMessagesRequest.PageNumber, 0);
+            }
+
+            int totalCount = conversation.Messages.Count();
             int totalPages = (int)Math.Ceiling((double)totalCount / getMessagesRequest.PageSize);
 
             List<Message> paginatedItems = conversation.Messages
@@ -65,6 +73,8 @@ namespace ChatMessageWebApi.Repositories
                 .Skip((getMessagesRequest.PageNumber - 1) * getMessagesRequest.PageSize)
                 .Take(getMessagesRequest.PageSize)
                 .ToList();
+
+
 
             return new Paginate<Message>(paginatedItems, totalCount, getMessagesRequest.PageSize, getMessagesRequest.PageNumber, totalPages);
         }

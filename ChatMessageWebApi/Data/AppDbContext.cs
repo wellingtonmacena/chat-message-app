@@ -7,7 +7,6 @@ namespace ChatMessageWebApi.Data
     {
         public DbSet<User> Users { get; set; }
         public DbSet<Message> Messages { get; set; }
-        public DbSet<Conversation> Conversations { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -15,26 +14,6 @@ namespace ChatMessageWebApi.Data
 
             base.OnModelCreating(modelBuilder);
 
-            // Conversation: Sender
-            modelBuilder.Entity<Conversation>()
-                .HasOne(c => c.Sender)
-                .WithMany()
-                .HasForeignKey(c => c.SenderId)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            // Conversation: Recipient
-            modelBuilder.Entity<Conversation>()
-                .HasOne(c => c.Recipient)
-                .WithMany()
-                .HasForeignKey(c => c.RecipientId)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            // Message → Conversation
-            modelBuilder.Entity<Message>()
-                .HasOne(m => m.Conversation)
-                .WithMany(c => c.Messages)
-                .HasForeignKey(m => m.ConversationId)
-                .OnDelete(DeleteBehavior.Cascade);
 
             List<User> users = new()
                 {
