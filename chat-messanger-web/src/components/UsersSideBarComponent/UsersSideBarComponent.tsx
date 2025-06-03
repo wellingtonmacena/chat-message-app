@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import User from "../../models/user.interface";
+import { useUser } from "@/context/userContext";
+import { getUsers } from "@/services/ChatMessagerApi";
 
 interface Props {
   onSelectRecipientUser: (user: User) => void;
@@ -8,24 +10,31 @@ interface Props {
 export default function UsersSideBarComponent({
   onSelectRecipientUser,
 }: Props) {
-  const [users, setUsers] = useState<User[]>([
-    { isOnline: false, id: "3", name: "Diana Olivia Ross", profilePictureUrl: "https://i.pravatar.cc/40?img=3" },
-    { isOnline: true, id: "1", name: "Alice wellington amcena well", profilePictureUrl: "https://i.pravatar.cc/40?img=1" },
+  const { getLoggedUser, setLoggedUser } = useUser();
+  
+  const [users, setUsers] = useState<User[]>([]);
 
-    { isOnline: true, id: "4", name: "Charlie" , profilePictureUrl: "https://i.pravatar.cc/40?img=4" },
-      { isOnline: false, id: "2", name: "Bob" , profilePictureUrl: "https://i.pravatar.cc/40?img=2" },
-    
-  ]);
   
 useEffect(() => {
-    setUsers((prev) =>
-      [...prev].sort((a, b) => {
-        if (a.isOnline && !b.isOnline) return -1;
-        if (!a.isOnline && b.isOnline) return 1;
-        return a.name.localeCompare(b.name);
-      })
-    );
-  }, []);
+  const fetchUsers = async () => {
+    console.log("Current user:", getLoggedUser());
+
+    try {
+      const response = await getUsers();
+
+      // Verifica se response.body existe e é um array antes de setar
+      if (Array.isArray(response?.data)) {
+        setUsers([...response.data]);
+      } else {
+        console.error("Resposta inesperada de getUsers:", response);
+      }
+    } catch (error) {
+      console.error("Failed to fetch users:", error);
+    }
+  };
+
+  fetchUsers();
+}, []);
 
   return (
     <aside className="w-54 h-screen bg-gray-100 border-r border-gray-300 p-4">

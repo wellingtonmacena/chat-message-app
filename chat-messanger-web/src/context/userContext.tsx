@@ -1,3 +1,5 @@
+"use client";
+import { json } from "stream/consumers";
 import User from "../models/user.interface";
 import React, {
   createContext,
@@ -9,9 +11,9 @@ import React, {
 
 
 interface UserContextType {
-  user: User | null;
+  getLoggedUser: ()=> User | null;
   users: User[];
-  setUser: (user: User) => void;
+  setLoggedUser: (user: User) => void;
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -28,24 +30,22 @@ export const useUser = () => {
 export const UserProvider: React.FC<{ children: ReactNode }> = ({
   children,
 }) => {
-  const [user, setUserState] = useState<User | null>(null);
+  const [loggedUser, setLoggedUserState] = useState<User | null>(null);
   const [users, setUsers] = useState<User[]>([]);
 
-  useEffect(() => {
-    const fetchUsers = async () => {
+ 
+  const getLoggedUser = () => {
+    var g = localStorage.getItem("loggedUser")!;
+     return JSON.parse( g);
+  };
 
-      
-    };
-
-    fetchUsers();
-  }, []);
-
-  const setUser = (user: User) => {
-     setUserState(user);
+  const setLoggedUser = (user: User) => {
+    localStorage.setItem("loggedUser", JSON.stringify(user))!;
+     setLoggedUserState(user);
   };
 
   return (
-    <UserContext.Provider value={{ user, users, setUser }}>
+    <UserContext.Provider value={{ getLoggedUser, users, setLoggedUser }}>
       {children}
     </UserContext.Provider>
   );

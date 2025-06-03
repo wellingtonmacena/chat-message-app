@@ -1,4 +1,5 @@
 ﻿using ChatMessageWebApi.Models.DTOs;
+using ChatMessageWebApi.Models.Requests;
 using ChatMessageWebApi.Services.Interfaces;
 using FluentResults;
 using Microsoft.AspNetCore.Mvc;
@@ -6,11 +7,12 @@ using posterr_webapi.src.Shared;
 
 namespace ChatMessageWebApi.Controllers
 {
+    [Route("api/v1/")]
     [ApiController]
     public class UsersController(ILogger<UsersController> logger, IUserService userService)
     {
 
-        [HttpGet("/users")]
+        [HttpGet("users")]
         public async Task<IActionResult> GetUsers()
         {
             Result<List<UserDto>> output = new();
@@ -20,36 +22,35 @@ namespace ChatMessageWebApi.Controllers
 
         }
 
-        [HttpGet("/messages")]
-        public async Task<IActionResult> GetMessages()
+        [HttpPost("users/login")]
+        public async Task<IActionResult> Login([FromBody] LoginRequest loginRequest)
         {
-            Result<List<UserDto>> output = new();
-            output.WithValue(await userService.GetUsers());
+            Result<UserDto> output = new();
+            output.WithValue(await userService.Login(loginRequest.Email, loginRequest.Password));
 
             return output.ToActionResult();
 
         }
 
-        [HttpGet("/conversations")]
-        public async Task<IActionResult> GetConversations()
+        [HttpGet("messages")]
+        public async Task<IActionResult> GetMessages([FromQuery] GetMessagesRequest getMessagesRequest)
         {
-            Result<List<UserDto>> output = new();
-            output.WithValue(await userService.GetUsers());
+            Result<Paginate<MessageDto>> output = new();
+            output.WithValue(await userService.GetMessages(getMessagesRequest));
 
             return output.ToActionResult();
 
         }
 
-        [HttpPost("/messages")]
-        public async Task<IActionResult> CreateMessage()
+        [HttpPost("messages")]
+        public async Task<IActionResult> CreateMessage([FromBody] PostNewMessageRequest postNewMessageRequest)
         {
-            Result<List<UserDto>> output = new();
-            output.WithValue(await userService.GetUsers());
+            Result<MessageDto> output = new();
+            output.WithValue(await userService.CreateMessage(postNewMessageRequest));
 
             return output.ToActionResult();
 
         }
 
-        
     }
 }
