@@ -12,6 +12,7 @@ using ChatMessageWebApi.Repositories.Interfaces;
 using ChatMessageWebApi.Repositories;
 using ChatMessageWebApi.Services.Interfaces;
 using ChatMessageWebApi.Services;
+using Microsoft.AspNetCore.SignalR;
 
 namespace ChatMessageWebApi
 {
@@ -88,6 +89,8 @@ namespace ChatMessageWebApi
             builder.Services.AddAutoMapper(typeof(AutoMapperProfiles));
             builder.Services.AddHttpContextAccessor();
             builder.Services.AddHealthChecks();
+            builder.Services.AddSignalR();
+            builder.Services.AddStackExchangeRedisCache(item=> item.Configuration =  builder.Configuration.GetConnectionString("RedisConnectionString"));
 
             WebApplication app = builder.Build();
 
@@ -105,6 +108,15 @@ namespace ChatMessageWebApi
 
             app.UseAuthorization();
             app.MapControllers();
+
+            app.MapPost("broadcast", async (string message, IHubContext<ChatHub, IChatClient> context) =>
+            {
+                await context.Clients.All.ReceiveMessage(message);
+                return Results.NoContent();
+            });
+
+
+            app.MapHub<ChatHub>("chat-server");
 
             app.Run();
         }

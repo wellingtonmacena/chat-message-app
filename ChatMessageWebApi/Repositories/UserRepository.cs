@@ -13,6 +13,12 @@ namespace ChatMessageWebApi.Repositories
 
         public async Task<Message> CreateMessage(PostNewMessageRequest message)
         {
+            Message? foundMessage = _appDbContext.Messages.FirstOrDefault(item => item.Id.Equals(message.MessageId));
+            if (foundMessage != null)
+            {
+                return foundMessage;
+            }
+
 
             Message newMessage = new()
             {

@@ -18,6 +18,7 @@ services:
     restart: always
     ports:
       - "6379:6379"
+    command: redis-server --requirepass MinhaSenhaSegura123
 
 volumes:
   sql_data_chat:
