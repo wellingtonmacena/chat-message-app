@@ -12,7 +12,7 @@ interface Props {
 export default function ChatMessageComponent({ recipient }: Props) {
   const [newMessage, setNewMessage] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
- const bottomRef = useRef<HTMLDivElement>(null);
+  const bottomRef = useRef<HTMLDivElement>(null);
   const [isFetching, setIsFetching] = useState(false);
   const { getLoggedUser, setLoggedUser } = useUser();
   let myUser: User = getLoggedUser()!;
@@ -20,6 +20,7 @@ export default function ChatMessageComponent({ recipient }: Props) {
   const [messages, setMessages] = useState<Message[]>([]);
 
   useEffect(() => {
+    setCurrentPage(1); // Reseta a página para 1 sempre que o recipient mudar
     const fetchMessages = async () => {
       const response = await getMessages({
         userId: myUser.id,
@@ -48,6 +49,7 @@ export default function ChatMessageComponent({ recipient }: Props) {
         const [entry] = entries;
         if (entry.isIntersecting) {
           fetchMoreMessages();
+          
         }
       },
       {
@@ -62,7 +64,10 @@ export default function ChatMessageComponent({ recipient }: Props) {
     }
 
     return () => {
-      if (bottomRef.current) observer.unobserve(bottomRef.current);
+      if (bottomRef.current){
+        observer.unobserve(bottomRef.current);
+        setCurrentPage((prev) => prev + 1); // Incrementa a página após o scroll
+      } 
     };
   }, [bottomRef.current, isFetching]);
 
@@ -75,7 +80,7 @@ export default function ChatMessageComponent({ recipient }: Props) {
         block: "end", // Ensures the end of the element is in view
       });
 
-      setCurrentPage((prev) => prev + 1); // Incrementa a página após o scroll
+      
     }
   }, [messages]); // Dispara este efeito sempre que 'messages' é atualizado
 

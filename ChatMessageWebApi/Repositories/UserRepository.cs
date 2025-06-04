@@ -13,35 +13,15 @@ namespace ChatMessageWebApi.Repositories
 
         public async Task<Message> CreateMessage(PostNewMessageRequest message)
         {
-            Conversation? conversation = await _appDbContext.Conversations
-               .Include(c => c.Messages)
-               .FirstOrDefaultAsync(c => c.SenderId.Equals(message.SenderId) && c.RecipientId.Equals(message.RecipientId)
-                                   || c.SenderId.Equals(message.RecipientId) && c.RecipientId.Equals(message.SenderId))
-              ;
-
-
-
-            if (conversation == null)
-            {
-                conversation = new Conversation
-                {
-                    SenderId = message.SenderId,
-                    RecipientId = message.RecipientId,
-                    CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow,
-
-                };
-
-                conversation = (await _appDbContext.AddAsync(conversation)).Entity;
-            }
 
             Message newMessage = new()
             {
                 Content = message.Content,
                 CreatedAt = message.CreatedAt,
-                ConversationId = conversation.Id,
+                RecipientId = message.RecipientId,
+                SenderId = message.SenderId,
                 UpdatedAt = message.CreatedAt,
-                
+
             };
 
             await _appDbContext.AddAsync(newMessage);
@@ -53,22 +33,15 @@ namespace ChatMessageWebApi.Repositories
 
         public async Task<Paginate<Message>> GetMessages(GetMessagesRequest getMessagesRequest)
         {
-            Conversation? conversation = await _appDbContext.Conversations
-                .Include(c => c.Messages)
-                .FirstOrDefaultAsync(c => c.SenderId.Equals(getMessagesRequest.SenderId) && c.RecipientId.Equals(getMessagesRequest.RecipientId)
-                                    || c.SenderId.Equals(getMessagesRequest.RecipientId) && c.RecipientId.Equals(getMessagesRequest.SenderId))
-               ;
+            List<Message> messages = await _appDbContext.Messages
+                 .Where(c => c.SenderId.Equals(getMessagesRequest.SenderId) && c.RecipientId.Equals(getMessagesRequest.RecipientId)
+                                     || c.SenderId.Equals(getMessagesRequest.RecipientId) && c.RecipientId.Equals(getMessagesRequest.SenderId)).ToListAsync();
 
 
-            if (conversation == null)
-            {
-                return new Paginate<Message>([], 0, getMessagesRequest.PageSize, getMessagesRequest.PageNumber, 0);
-            }
-
-            int totalCount = conversation.Messages.Count();
+            int totalCount = messages.Count;
             int totalPages = (int)Math.Ceiling((double)totalCount / getMessagesRequest.PageSize);
 
-            List<Message> paginatedItems = conversation.Messages
+            List<Message> paginatedItems = messages
 
                 .Skip((getMessagesRequest.PageNumber - 1) * getMessagesRequest.PageSize)
                 .Take(getMessagesRequest.PageSize)

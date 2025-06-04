@@ -10,10 +10,8 @@ namespace ChatMessageWebApi.Models.Entities
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
         // Foreign key for the conversation
-        public Guid ConversationId { get; set; }
+        public Guid SenderId { get; set; }
+        public Guid RecipientId { get; set; }
 
-        // Navigation property for the related conversation
-        public Conversation Conversation { get; set; }
- 
     }
 }

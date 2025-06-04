@@ -20,16 +20,7 @@ namespace ChatMessageWebApi.Services
 
             Message createdMessage = await _userRepository.CreateMessage(postNewMessageRequest);
 
-            return new MessageDto()
-            {
-                Id = createdMessage.Id,
-                Content = createdMessage.Content,
-                SenderId = createdMessage.Conversation.SenderId,
-                RecipientId = createdMessage.Conversation.RecipientId,
-                CreatedAt = createdMessage.CreatedAt,
-                ConversationId = createdMessage.ConversationId
-
-            };
+            return _mapper.Map<MessageDto>(createdMessage);
         }
 
         public async Task<Paginate<MessageDto>> GetMessages(GetMessagesRequest getMessagesRequest)
