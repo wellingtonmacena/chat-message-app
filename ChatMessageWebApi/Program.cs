@@ -37,9 +37,15 @@ namespace ChatMessageWebApi
                     {
                         options.AddPolicy(corsPolicy,
                             builder => builder
-                            .AllowAnyOrigin()
+    .WithOrigins("http://localhost:3000")
                             .AllowAnyMethod()
                             .AllowAnyHeader()
+                            .AllowCredentials()
+
+
+
+
+
                             );
                     });
 
@@ -116,7 +122,7 @@ namespace ChatMessageWebApi
             });
 
 
-            app.MapHub<ChatHub>("chat-server");
+            app.MapHub<ChatHub>("/chat-server");
 
             app.Run();
         }

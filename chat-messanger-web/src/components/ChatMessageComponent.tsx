@@ -2,8 +2,11 @@ import { useUser } from "@/context/userContext";
 import Message from "@/models/message.interface";
 import User from "@/models/user.interface";
 import { getMessages, sendMessage } from "@/services/ChatMessagerApi";
-import { use, useEffect, useRef, useState } from "react";
+import { use, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { v4 as uuidv4, v4 } from "uuid";
+
+import * as signalR from "@microsoft/signalr";
+import { environment } from "@/environments/environments";
 
 interface Props {
   recipient: User;
@@ -16,8 +19,8 @@ export default function ChatMessageComponent({ recipient }: Props) {
   const [isFetching, setIsFetching] = useState(false);
   const { getLoggedUser, setLoggedUser } = useUser();
   let myUser: User = getLoggedUser()!;
-
   const [messages, setMessages] = useState<Message[]>([]);
+  const connectionRef = useRef<signalR.HubConnection | null>(null);
 
   useEffect(() => {
     setCurrentPage(1); // Reseta a página para 1 sempre que o recipient mudar
@@ -36,20 +39,12 @@ export default function ChatMessageComponent({ recipient }: Props) {
     fetchMessages();
   }, [recipient]);
 
- 
-
-  const fetchMoreMessages = () => {
-    if (isFetching) return;
-    setIsFetching(true);
-  };
-
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
         const [entry] = entries;
         if (entry.isIntersecting) {
           fetchMoreMessages();
-          
         }
       },
       {
@@ -64,10 +59,10 @@ export default function ChatMessageComponent({ recipient }: Props) {
     }
 
     return () => {
-      if (bottomRef.current){
+      if (bottomRef.current) {
         observer.unobserve(bottomRef.current);
         setCurrentPage((prev) => prev + 1); // Incrementa a página após o scroll
-      } 
+      }
     };
   }, [bottomRef.current, isFetching]);
 
@@ -79,10 +74,43 @@ export default function ChatMessageComponent({ recipient }: Props) {
         behavior: "smooth",
         block: "end", // Ensures the end of the element is in view
       });
-
-      
     }
   }, [messages]); // Dispara este efeito sempre que 'messages' é atualizado
+
+  useEffect(() => {
+    const conn = new signalR.HubConnectionBuilder()
+      .withUrl(
+        `${environment.CHAT_MESSAGE_API_BASE_URL_WEB_CONNECTION}?userId=${myUser.id}`
+      )
+      .withAutomaticReconnect()
+      .build();
+
+    conn.on("ReceiveMessage", (rawMessage: string) => {
+      const message: Message = JSON.parse(rawMessage);
+      console.log("ReceiveMessage", message);
+      setMessages((prev)=>[...prev, message]);
+    });
+
+    conn
+      .start()
+      .then(() => {
+        console.log("Conectado ao SignalR");
+      })
+      .catch((err) => {
+        console.error("Erro ao conectar ao SignalR:", err);
+      });
+
+    connectionRef.current = conn;
+
+    return () => {
+      conn.stop();
+    };
+  }, []);
+
+  const fetchMoreMessages = () => {
+    if (isFetching) return;
+    setIsFetching(true);
+  };
 
   const handleSendMessage = async () => {
     if (!newMessage.trim()) return;
@@ -95,11 +123,37 @@ export default function ChatMessageComponent({ recipient }: Props) {
       content: newMessage.trim(),
     };
 
-    await sendMessage(messageToAdd);
+    await sendMessageWebSocket(messageToAdd);
     setMessages((prev) => [...prev, messageToAdd]);
 
     setNewMessage("");
     // A chamada para scrollIntoView foi movida para o useEffect acima.
+  };
+
+  const sendMessageWebSocket = async (message: Message) => {
+    const conn = connectionRef.current;
+    if (!conn || conn.state !== signalR.HubConnectionState.Connected) {
+      console.warn("Conexão não está pronta.");
+      return;
+    }
+
+    try {
+      await conn.invoke("SendMessage", JSON.stringify(message));
+    } catch (error) {
+      console.error("Erro ao enviar mensagem via SignalR:", error);
+    }
+  };
+
+  const setDateTime = (createdAt: Date):string => {
+    try {
+      return new Date(createdAt).toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+        second:"2-digit",
+      }) ;
+    } catch (error) {
+      return new Date(createdAt).toLocaleString();
+    }
   };
 
   return (
@@ -173,10 +227,7 @@ export default function ChatMessageComponent({ recipient }: Props) {
                 </div>
                 <div>{msg.content}</div>
                 <div className="text-xs text-right opacity-60 mt-1 font-mono">
-                  {new Date(msg.createdAt).toLocaleTimeString([], {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
+                  {setDateTime(msg.createdAt)}
                 </div>
               </div>
             </div>

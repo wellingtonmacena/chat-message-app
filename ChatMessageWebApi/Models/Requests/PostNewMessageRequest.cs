@@ -6,13 +6,13 @@ namespace ChatMessageWebApi.Models.Requests
     {
         [JsonPropertyName("id")]
         public Guid MessageId { get; set; }
+        [JsonPropertyName("content")]
         public string Content { get; set; }
+        [JsonPropertyName("createdAt")]
         public DateTime CreatedAt { get; set; }
-
+        [JsonPropertyName("senderId")]
         public Guid SenderId { get; set; }
+        [JsonPropertyName("recipientId")]
         public Guid RecipientId { get; set; }
-
-        // Foreign key for the conversation
-        public Guid ConversationId { get; set; }
     }
 }

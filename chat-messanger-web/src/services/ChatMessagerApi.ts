@@ -5,8 +5,9 @@ import LoginRequest from "@/models/dto/loginRequest.interface";
 import GetMessagesRequest from "@/models/dto/getMessagesRequest.interface";
 import SendMessageRequest from "@/models/sendMessageRequest";
 import axios from "axios";
+import { environment } from "@/environments/environments";
 
-const BASE_URL = "https://localhost:7055/api/v1";
+const BASE_URL = environment.CHAT_MESSAGE_API_BASE_URL;
 
 export const getUsers = async () => {
   return await axios.get(`${BASE_URL}/users`);
