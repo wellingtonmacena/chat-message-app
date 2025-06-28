@@ -7,5 +7,6 @@
         public string Email { get; set; }
         public string ProfilePictureUrl { get; set; }
         public DateTime CreatedAt { get; set; }
+        public bool IsOnline { get; set; } = false;
     }
 }

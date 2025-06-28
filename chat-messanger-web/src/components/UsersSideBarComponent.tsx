@@ -5,14 +5,42 @@ import { getUsers } from "@/services/ChatMessagerApi";
 
 interface Props {
   onSelectRecipientUser: (user: User) => void;
+    connectionRef: signalR.HubConnection | null;
 }
 
 export default function UsersSideBarComponent({
   onSelectRecipientUser,
+  connectionRef,
 }: Props) {
   const { getLoggedUser, setLoggedUser } = useUser();
 
   const [users, setUsers] = useState<User[]>([]);
+
+useEffect(() => {
+  const connection = connectionRef;
+  if (!connection) return;
+
+  // Evento de desconexão
+  connection.onclose((error) => {
+    console.log("Desconectado do SignalR", error);
+  });
+
+  // Evento para atualizar status do usuário
+  connection.on("RemoveUser", (userId: string) => {
+    console.log("Usuário removido:", userId);
+
+    setUsers((prevUsers) => {
+      const updatedUsers = prevUsers.map((user) =>
+        user.id === userId ? { ...user, isOnline: false } : user
+      );
+
+      return sortUsersByOnlineStatusAndName(updatedUsers);
+    });
+  });
+
+ 
+}, []);
+
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -20,7 +48,7 @@ export default function UsersSideBarComponent({
 
       try {
         const response = await getUsers();
-
+        console.log("Fetched users:", response.data);
         // Verifica se response.body existe e é um array antes de setar
         if (Array.isArray(response?.data)) {
           var index = response.data.findIndex(
@@ -29,7 +57,8 @@ export default function UsersSideBarComponent({
           if (index !== -1) {
             response.data.splice(index, 1); // Remove o usuário logado da lista
           }
-          setUsers([...response.data]);
+          var sortedUsers = sortUsersByOnlineStatusAndName(response.data);
+          setUsers([...sortedUsers]);
         } else {
           console.error("Resposta inesperada de getUsers:", response);
         }
@@ -40,6 +69,17 @@ export default function UsersSideBarComponent({
 
     fetchUsers();
   }, []);
+
+  const sortUsersByOnlineStatusAndName = (users: User[]) => {
+  return users.sort((a, b) => {
+    // Primeiro: usuários online antes de offline
+    if (a.isOnline && !b.isOnline) return -1;
+    if (!a.isOnline && b.isOnline) return 1;
+
+    // Segundo: ordenar por nome (alfabética)
+    return a.name.localeCompare(b.name);
+  });
+};
 
   return (
     <aside className="w-54 h-screen bg-gray-100 border-r border-gray-300 p-4">

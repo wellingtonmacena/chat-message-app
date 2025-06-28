@@ -8,5 +8,6 @@ namespace ChatMessageWebApi.Services.Interfaces
         Task ReceiveMessage( string message);
 
         Task SendMessage(string message);
+        Task RemoveUser(string userId);
     }
 }

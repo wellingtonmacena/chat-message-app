@@ -10,9 +10,10 @@ import { environment } from "@/environments/environments";
 
 interface Props {
   recipient: User;
+  connectionRef: signalR.HubConnection | null;
 }
 
-export default function ChatMessageComponent({ recipient }: Props) {
+export default function ChatMessageComponent({ recipient, connectionRef }: Props) {
   const [newMessage, setNewMessage] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -20,7 +21,6 @@ export default function ChatMessageComponent({ recipient }: Props) {
   const { getLoggedUser, setLoggedUser } = useUser();
   let myUser: User = getLoggedUser()!;
   const [messages, setMessages] = useState<Message[]>([]);
-  const connectionRef = useRef<signalR.HubConnection | null>(null);
 
   useEffect(() => {
     setCurrentPage(1); // Reseta a página para 1 sempre que o recipient mudar
@@ -78,33 +78,16 @@ export default function ChatMessageComponent({ recipient }: Props) {
   }, [messages]); // Dispara este efeito sempre que 'messages' é atualizado
 
   useEffect(() => {
-    const conn = new signalR.HubConnectionBuilder()
-      .withUrl(
-        `${environment.CHAT_MESSAGE_API_BASE_URL_WEB_CONNECTION}?userId=${myUser.id}`
-      )
-      .withAutomaticReconnect()
-      .build();
+ 
 
-    conn.on("ReceiveMessage", (rawMessage: string) => {
+    connectionRef!.on("ReceiveMessage", (rawMessage: string) => {
       const message: Message = JSON.parse(rawMessage);
       console.log("ReceiveMessage", message);
       setMessages((prev)=>[...prev, message]);
     });
 
-    conn
-      .start()
-      .then(() => {
-        console.log("Conectado ao SignalR");
-      })
-      .catch((err) => {
-        console.error("Erro ao conectar ao SignalR:", err);
-      });
-
-    connectionRef.current = conn;
-
-    return () => {
-      conn.stop();
-    };
+    
+  
   }, []);
 
   const fetchMoreMessages = () => {
@@ -131,7 +114,7 @@ export default function ChatMessageComponent({ recipient }: Props) {
   };
 
   const sendMessageWebSocket = async (message: Message) => {
-    const conn = connectionRef.current;
+    const conn = connectionRef;
     if (!conn || conn.state !== signalR.HubConnectionState.Connected) {
       console.warn("Conexão não está pronta.");
       return;

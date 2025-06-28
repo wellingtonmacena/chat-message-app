@@ -41,11 +41,6 @@ namespace ChatMessageWebApi
                             .AllowAnyMethod()
                             .AllowAnyHeader()
                             .AllowCredentials()
-
-
-
-
-
                             );
                     });
 

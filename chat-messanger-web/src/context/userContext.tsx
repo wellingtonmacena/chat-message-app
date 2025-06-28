@@ -9,9 +9,8 @@ import React, {
   useEffect,
 } from "react";
 
-
 interface UserContextType {
-  getLoggedUser: ()=> User | null;
+  getLoggedUser: () => User | null;
   users: User[];
   setLoggedUser: (user: User) => void;
 }
@@ -26,22 +25,22 @@ export const useUser = () => {
   return context;
 };
 
-
 export const UserProvider: React.FC<{ children: ReactNode }> = ({
   children,
 }) => {
   const [loggedUser, setLoggedUserState] = useState<User | null>(null);
   const [users, setUsers] = useState<User[]>([]);
 
- 
   const getLoggedUser = () => {
-    var g = localStorage.getItem("loggedUser")!;
-     return JSON.parse( g);
+   
+      var json = localStorage.getItem("loggedUser")!;
+
+    return JSON.parse(json);
   };
 
   const setLoggedUser = (user: User) => {
     localStorage.setItem("loggedUser", JSON.stringify(user))!;
-     setLoggedUserState(user);
+    setLoggedUserState(user);
   };
 
   return (
@@ -50,4 +49,3 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({
     </UserContext.Provider>
   );
 };
-

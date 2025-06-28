@@ -5,11 +5,12 @@ using ChatMessageWebApi.Models.Requests;
 using ChatMessageWebApi.Repositories.Interfaces;
 using ChatMessageWebApi.Services.Interfaces;
 using ChatMessageWebApi.Shared.Exceptions;
+using Microsoft.Extensions.Caching.Distributed;
 using posterr_webapi.src.Shared;
 
 namespace ChatMessageWebApi.Services
 {
-    public class UserService(IUserRepository userRepository, ILogger<UserService> logger, IMapper mapper) : IUserService
+    public class UserService(IDistributedCache distributedCache, IUserRepository userRepository, ILogger<UserService> logger, IMapper mapper) : IUserService
     {
         private readonly IUserRepository _userRepository = userRepository;
         private readonly ILogger<UserService> _logger = logger;
@@ -35,7 +36,14 @@ namespace ChatMessageWebApi.Services
             _logger.LogInformation("Getting all users.");
 
             List<User> users = await _userRepository.GetUsers();
-            return _mapper.Map<List<UserDto>>(users);
+            var usersDto =  _mapper.Map<List<UserDto>>(users);
+
+            foreach (var item in usersDto)
+            {
+                item.IsOnline = !string.IsNullOrWhiteSpace( await distributedCache.GetStringAsync(item.Id.ToString(), CancellationToken.None));
+            }
+
+            return usersDto;
         }
 
         public async Task<UserDto> Login(string email, string password)
